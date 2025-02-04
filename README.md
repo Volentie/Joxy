@@ -1,1 +1,1 @@
-# Joxy
+# Alternative implementation of jlox tree-walk interpreter
