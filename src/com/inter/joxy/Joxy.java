@@ -42,6 +42,7 @@ public class Joxy {
 			String line = reader.readLine();
 			if (line == null) break;
 			run(line);
+			// Reset the flag so it doesn't kill user's entire session
 			hadError = false;
 		}
 	}
