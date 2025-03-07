@@ -31,7 +31,7 @@ public class Scanner {
 
 	private void scanToken() {
 		char c = advance();
-		switch (c) {
+		switch (c) { // c is the current character being processed, it is already consumed at this point.
 			case '(': addToken(LEFT_PAREN); break;
 			case ')': addToken(RIGHT_PAREN); break;
 			case '{': addToken(LEFT_BRACE); break;
@@ -57,6 +57,7 @@ public class Scanner {
 			case '/':
 				if (match('/')) {
 					// Peeks until the end of the line.
+					// Using peek here instead of match because we don't want to consume the new line character, so we can increment the line count.
 					while (peek() != '\n' && !isAtEnd()) advance();
 				} else {
 					addToken(SLASH);
@@ -72,6 +73,8 @@ public class Scanner {
 			case '\n':
 				line++;
 				break;
+			
+			case '"': string(); break;
 
 			default:
 				Joxy.error(line, "Unexpected character.");
@@ -79,6 +82,21 @@ public class Scanner {
 		}
 	}
 	
+	private void string() {
+		while (!match('"')) {
+			if (peek() == '\n') line++; // Supports multi-line strings.
+			advance();
+		};
+		
+		if (isAtEnd()) {
+			Joxy.error(line, "Unterminated string.");
+		}
+
+		// Trim the surrounding quotes.
+		addToken(STRING, source.substring(start + 1, current - 1));
+	}
+	
+	// Input, consumes the next unprocessed character in the source file if it's equal to the expected character.
 	private boolean match(char expected) {
 		if (isAtEnd()) return false;
 		if (source.charAt(current) != expected) return false;
@@ -87,7 +105,7 @@ public class Scanner {
 		return true;
 	}	
 	
-	// Don't consume the character.
+	// Similar to advance but it doesn't consume the character (lookahead).
 	private char peek() {
 		if (isAtEnd()) return '\0';
 		return source.charAt(current);
