@@ -81,7 +81,29 @@ public class Scanner {
 					// Peeks until the end of the line.
 					// Using peek here instead of match because we don't want to consume the new line character, so we can increment the line count.
 					while (peek() != '\n' && !isAtEnd()) advance();
-				} else {
+				} else if (match('*')) {
+					while(true) {
+						if (isAtEnd()) {
+							Joxy.error(line, "Unterminated block comment."); // Reports unfinished block comment
+							return; // Exit
+						}
+						
+						char pk = peek(); // Only call peek once (micro-optimization)
+
+						if (pk == '*') {
+							if (peekNext() == '/') {
+								advance(); // Consumes *
+								advance(); // Consumes /
+								break;
+							}
+						}
+
+						if (pk == '\n') line++;
+
+						advance(); // Consumes the next input.
+					}
+				}
+				else {
 					addToken(SLASH);
 				}
 				break;
