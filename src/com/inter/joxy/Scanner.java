@@ -50,6 +50,8 @@ public class Scanner {
 		tokens.add(new Token(EOF, "", null, line));
 		return tokens;
 	}
+	
+
 
 	private void scanToken() {
 		char c = advance();
@@ -82,26 +84,7 @@ public class Scanner {
 					// Using peek here instead of match because we don't want to consume the new line character, so we can increment the line count.
 					while (peek() != '\n' && !isAtEnd()) advance();
 				} else if (match('*')) {
-					while(true) {
-						if (isAtEnd()) {
-							Joxy.error(line, "Unterminated block comment."); // Reports unfinished block comment
-							return; // Exit
-						}
-						
-						char pk = peek(); // Only call peek once (micro-optimization)
-
-						if (pk == '*') {
-							if (peekNext() == '/') {
-								advance(); // Consumes *
-								advance(); // Consumes /
-								break;
-							}
-						}
-
-						if (pk == '\n') line++;
-
-						advance(); // Consumes the next input.
-					}
+					readBlockComment();
 				}
 				else {
 					addToken(SLASH);
@@ -131,7 +114,36 @@ public class Scanner {
 				break;
 		}
 	}
-	
+
+	private void readBlockComment() {
+		while(true) {
+			if (isAtEnd()) {
+				Joxy.error(line, "Unterminated block comment."); // Reports unfinished block comment.
+				return;
+			}
+			
+			char pk = peek(); // Only call peek once (micro-optimization).
+			
+			if (pk == '/' && peekNext() == '*') {
+				advance(); // Consumes /
+				advance(); // Consumes *
+				readBlockComment(); // Read another comment block.
+			}
+
+			if (pk == '*') {
+				if (peekNext() == '/') {
+					advance(); // Consumes *
+					advance(); // Consumes /
+					return;
+				}
+			}
+
+			if (pk == '\n') line++;
+
+			advance(); // Consumes the next input.
+		}
+	}
+
 	private void identifier() {
 		while (isAlphaNumeric(peek())) advance();
 		
@@ -156,7 +168,7 @@ public class Scanner {
 	private void number() {
 		while (isDigit(peek())) advance();
 		
-		// Look for a fractional part
+		// Look for a fractional part.
 		if (peek() == '.' && isDigit(peekNext())) {
 			// Consume the "."
 			advance();
@@ -169,20 +181,24 @@ public class Scanner {
 	}
 	
 	private char peekNext() {
-		// It's important to notice that I'm not consuming the current char, it just looks two characters ahead instead and returns the input;
+		// It's important to notice that I'm not consuming the current char, it just looks two characters ahead instead and returns the input.
 		if (current + 1 >= source.length()) return '\0';
 		return source.charAt(current + 1);
 	}
 	
 	private void string() {
-		while (!match('"')) {
+		while (peek() != '"' && !isAtEnd()) {
 			if (peek() == '\n') line++; // Supports multi-line strings.
 			advance();
 		};
 		
 		if (isAtEnd()) {
 			Joxy.error(line, "Unterminated string.");
+			return;
 		}
+		
+		// The closing ".
+		advance();
 
 		// Trim the surrounding quotes.
 		addToken(STRING, source.substring(start + 1, current - 1));
@@ -216,7 +232,7 @@ public class Scanner {
 		return source.charAt(current++);
 	}
 	
-	// Overload method
+	// Overload method.
 	private void addToken(TokenType type) {
 		addToken(type, null);
 	}
