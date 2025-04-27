@@ -115,32 +115,32 @@ public class Scanner {
 		}
 	}
 
-	private void readBlockComment() {
+	private boolean readBlockComment() {
 		while(true) {
 			if (isAtEnd()) {
 				Joxy.error(line, "Unterminated block comment."); // Reports unfinished block comment.
-				return;
-			}
-			
-			char pk = peek(); // Only call peek once (micro-optimization).
-			
-			if (pk == '/' && peekNext() == '*') {
-				advance(); // Consumes /
-				advance(); // Consumes *
-				readBlockComment(); // Read another comment block.
+				return true;
 			}
 
-			if (pk == '*') {
-				if (peekNext() == '/') {
-					advance(); // Consumes *
-					advance(); // Consumes /
-					return;
-				}
+			char pk = peek(); // Call peek only once.
+			
+			if (pk == '/' && peekNext() == '*') {
+				advance(); // Consume /
+				advance(); // Consume *
+				// Recurse into the nested comment.
+				if (readBlockComment()) return true;
+				continue; // <- Go back to top, re-peek the updated 'current'.
+			}
+
+			if (pk == '*' && peekNext() == '/') {
+				advance(); // Consume *
+				advance(); // Consume /
+				return false;
 			}
 
 			if (pk == '\n') line++;
 
-			advance(); // Consumes the next input.
+			advance(); // Consume the next input.
 		}
 	}
 
@@ -201,7 +201,8 @@ public class Scanner {
 		advance();
 
 		// Trim the surrounding quotes.
-		addToken(STRING, source.substring(start + 1, current - 1));
+		addToken(STRING,
+		source.substring(start + 1, current - 1));
 	}
 	
 	// Input, consumes the next unprocessed character in the source file if it's equal to the expected character.
