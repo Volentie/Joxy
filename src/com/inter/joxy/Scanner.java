@@ -200,9 +200,10 @@ public class Scanner {
 		// The closing ".
 		advance();
 
+		String str = source.substring(start + 1, current - 1);
+
 		// Trim the surrounding quotes.
-		addToken(STRING,
-		source.substring(start + 1, current - 1));
+		addToken(STRING, str);
 	}
 	
 	// Input, consumes the next unprocessed character in the source file if it's equal to the expected character.
